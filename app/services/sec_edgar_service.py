@@ -106,7 +106,7 @@ def download_filing_text(filing_url: str) -> str:
 
     soup = BeautifulSoup(html, "html.parser")
 
-    for tag in soup(["script", "style", "table"]):
+    for tag in soup(["script", "style"]):
         tag.decompose()
 
     text = soup.get_text(separator="\n")
@@ -114,4 +114,13 @@ def download_filing_text(filing_url: str) -> str:
     lines = [line.strip() for line in text.splitlines()]
     lines = [line for line in lines if line]
 
-    return "\n".join(lines)
+    text = "\n".join(lines)
+
+    marker = "UNITED STATES\nSECURITIES AND EXCHANGE COMMISSION"
+
+    index = text.find(marker)
+
+    if index != -1:
+        text = text[index:]
+
+    return text
