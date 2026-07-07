@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from app.services.rag_service import answer_question
+
 router = APIRouter(
     prefix="/rag",
     tags=["rag"]
@@ -51,3 +53,20 @@ async def semantic_search(
             for chunk in chunks
         ],
     }
+
+
+class RagAnswerRequest(BaseModel):
+    query: str
+    limit: int = 5
+
+
+@router.post("/answer")
+async def rag_answer(
+    request: RagAnswerRequest,
+    db: Session = Depends(get_db),
+):
+    return answer_question(
+        db=db,
+        query=request.query,
+        limit=request.limit,
+    )
