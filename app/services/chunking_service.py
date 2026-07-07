@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.filing import Filing
 from app.models.document_chunk import DocumentChunk
+from app.services.embedding_service import embed_text
 
 
 def chunk_text(text: str, max_chars: int = 3000, overlap_chars: int = 300) -> list:
@@ -60,3 +61,28 @@ def refresh_filing_chunks(
     db.commit()
 
     return filing, len(chunks)
+
+
+
+def refresh_chunk_embeddings(db: Session, filing_id: int):
+    filing = db.query(Filing).filter(Filing.id == filing_id).first()
+
+    if not filing:
+        return None, 0
+
+    chunks = (
+        db.query(DocumentChunk)
+        .filter(DocumentChunk.filing_id == filing_id)
+        .order_by(DocumentChunk.chunk_index.asc())
+        .all()
+    )
+
+    updated_count = 0
+
+    for chunk in chunks:
+        chunk.embedding = embed_text(chunk.text)
+        updated_count += 1
+
+    db.commit()
+
+    return filing, updated_count

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
 from app.models.document_chunk import DocumentChunk
 from app.models.filing import Filing
-from app.services.chunking_service import refresh_filing_chunks
+from app.services.chunking_service import refresh_filing_chunks, refresh_chunk_embeddings
 
 router = APIRouter(
     prefix="/filings",
@@ -69,4 +69,21 @@ async def get_chunks(
             }
             for chunk in chunks
         ],
+    }
+
+
+@router.post("/{filing_id}/embeddings/refresh")
+async def refresh_embeddings(
+    filing_id: int,
+    db: Session = Depends(get_db),
+):
+    filing, count = refresh_chunk_embeddings(db, filing_id)
+
+    if not filing:
+        raise HTTPException(status_code=404, detail="Filing not found")
+
+    return {
+        "filing_id": filing.id,
+        "status": "embeddings_refreshed",
+        "chunks_embedded": count,
     }

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
 
 from app.core.database import Base
 
@@ -10,9 +11,10 @@ class DocumentChunk(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     filing_id = Column(Integer, ForeignKey("filings.id"), nullable=False, index=True)
-
     chunk_index = Column(Integer, nullable=False)
     text = Column(Text, nullable=False)
+
+    embedding = Column(Vector(384), nullable=True)
 
     filing = relationship("Filing")
 
