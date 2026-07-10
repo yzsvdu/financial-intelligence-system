@@ -6,19 +6,50 @@ from app.core.dependencies import get_db
 from app.models import MarketPrice
 from app.models.filing import Filing
 from app.models.financial_statement import FinancialStatement
+from app.services.chunking_service import refresh_filing_chunks, refresh_chunk_embeddings
 from app.services.company_service import get_company_by_ticker, ingest_company as ingest_company_service, \
     refresh_market_prices, refresh_financial_statements, refresh_sec_filings
 from app.services.dashboard_service import build_company_dashboard
+from app.services.yfinance_service import fetch_company_profile
 
 router = APIRouter(
     prefix="/companies",
     tags=["Companies"],
 )
 
-
 class CompanyIngestRequest(BaseModel):
     ticker: str
     force_refresh: bool = False
+
+
+
+@router.get("/search")
+async def search_companies(
+    q: str,
+):
+    ticker = q.upper().strip()
+
+    if not ticker:
+        return {"results": []}
+
+    try:
+        profile = fetch_company_profile(ticker)
+    except Exception:
+        return {"results": []}
+
+    if not profile or not profile.get("name"):
+        return {"results": []}
+
+    return {
+        "results": [
+            {
+                "ticker": ticker,
+                "name": profile.get("name"),
+                "sector": profile.get("sector"),
+                "industry": profile.get("industry"),
+            }
+        ]
+    }
 
 @router.post("/ingest")
 async def ingest_company(
@@ -246,3 +277,86 @@ async def get_company_filings(
             for filing in filings
         ],
     }
+
+
+
+@router.post("/{ticker}/full-ingest")
+async def full_ingest_company(
+    ticker: str,
+    force_refresh: bool = False,
+    market_period: str = "1y",
+    statement_period: str = "annual",
+    filing_form_type: str = "10-K",
+    filing_limit: int = 10,
+    db: Session = Depends(get_db),
+):
+    try:
+        company, company_status = ingest_company_service(
+            db=db,
+            ticker=ticker,
+            force_refresh=force_refresh,
+        )
+
+        _, market_count = refresh_market_prices(
+            db=db,
+            ticker=ticker,
+            period=market_period,
+        )
+
+        _, statement_count = refresh_financial_statements(
+            db=db,
+            ticker=ticker,
+            period=statement_period,
+        )
+
+        company, filing_count = refresh_sec_filings(
+            db=db,
+            ticker=ticker,
+            form_type=filing_form_type,
+            limit=filing_limit,
+        )
+
+        filings = (
+            db.query(Filing)
+            .filter(Filing.company_id == company.id)
+            .order_by(Filing.filing_date.desc())
+            .limit(filing_limit)
+            .all()
+        )
+
+        total_chunks = 0
+        total_embeddings = 0
+
+        for filing in filings:
+            _, chunk_count = refresh_filing_chunks(
+                db=db,
+                filing_id=filing.id,
+            )
+
+            _, embedding_count = refresh_chunk_embeddings(
+                db=db,
+                filing_id=filing.id,
+            )
+
+            total_chunks += chunk_count
+            total_embeddings += embedding_count
+
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+
+    dashboard = build_company_dashboard(db, ticker)
+
+    return {
+        "ticker": company.ticker,
+        "status": "full_ingest_complete",
+        "steps": {
+            "company": company_status,
+            "market_data_records": market_count,
+            "financial_statement_records": statement_count,
+            "filing_records": filing_count,
+            "chunk_records": total_chunks,
+            "embedding_records": total_embeddings,
+        },
+        "dashboard": dashboard,
+    }
+

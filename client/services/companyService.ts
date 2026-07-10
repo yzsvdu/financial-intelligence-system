@@ -1,49 +1,68 @@
 import type { Company } from "../types/company";
+import type {DashboardData} from "../features/company-dashboard/dashboard.types.ts";
 
 const API_BASE_URL = "http://localhost:8000/api/v1";
 
-const KNOWN_COMPANIES: Company[] = [
-    { ticker: "AAPL", name: "Apple Inc." },
-    { ticker: "MSFT", name: "Microsoft" },
-    { ticker: "NVDA", name: "NVIDIA" },
-    { ticker: "AMZN", name: "Amazon" },
-    { ticker: "META", name: "Meta Platforms" },
-    { ticker: "GOOGL", name: "Alphabet" },
-];
-
 export async function searchCompanies(query: string): Promise<Company[]> {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
 
     if (!q) return [];
 
-    return KNOWN_COMPANIES.filter(
-        (company) =>
-            company.ticker.toLowerCase().includes(q) ||
-            company.name.toLowerCase().includes(q)
+    const response = await fetch(
+        `${API_BASE_URL}/companies/search?q=${encodeURIComponent(q)}`
     );
+
+    if (!response.ok) {
+        return [];
+    }
+
+    const data = await response.json();
+
+    return data.results;
 }
 
 export async function ingestCompany(ticker: string): Promise<boolean> {
     const response = await fetch(
-        `http://localhost:8000/api/v1/companies/${ticker}/full-ingest`,
+        `${API_BASE_URL}/companies/${ticker}/full-ingest`,
         {
             method: "POST",
         }
     );
 
-    if (!response.ok) {
-        return false;
-    }
-
-    return true;
+    return response.ok;
 }
 
-
-export async function getCompanyDashboard(ticker: string) {
-    const response = await fetch(`${API_BASE_URL}/companies/${ticker}/dashboard`);
+export async function getCompanyDashboard(
+    ticker: string,
+    signal?: AbortSignal,
+): Promise<DashboardData> {
+    const response = await fetch(
+        `${API_BASE_URL}/companies/${ticker}/dashboard`,
+        { signal },
+    );
 
     if (!response.ok) {
         throw new Error("Failed to load dashboard");
+    }
+
+    return response.json() as Promise<DashboardData>;
+}
+
+export async function askRagQuestion(query: string, ticker?: string | null, limit = 5) {
+    const response = await fetch(`${API_BASE_URL}/rag/answer`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            query,
+            ticker,
+            limit,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to get AI answer");
     }
 
     return response.json();

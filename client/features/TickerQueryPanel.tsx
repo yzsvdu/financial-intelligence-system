@@ -37,8 +37,17 @@ export default function TickerQueryPanel({
 
     const [results, setResults] = useState<Company[]>([]);
 
-    const [watchlist, setWatchlist] = useState<SelectedCompany[]>([]);
+    const [watchlist, setWatchlist] = useState<SelectedCompany[]>(() => {
+        const saved = localStorage.getItem("watchlist");
 
+        if (!saved) return [];
+
+        try {
+            return JSON.parse(saved);
+        } catch {
+            return [];
+        }
+    });
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
@@ -47,6 +56,10 @@ export default function TickerQueryPanel({
 
         searchCompanies(query).then(setResults);
     }, [query]);
+
+    useEffect(() => {
+        localStorage.setItem("watchlist", JSON.stringify(watchlist));
+    }, [watchlist]);
 
     async function handleSelect(company: Company) {
         if (watchlist.some((c) => c.ticker === company.ticker)) {

@@ -162,7 +162,7 @@ def refresh_financial_statements(db: Session, ticker: str, period: str = "annual
 
 
 
-def refresh_sec_filings(db: Session, ticker: str, form_type: str = "10-K", limit: int = 1):
+def refresh_sec_filings(db: Session, ticker: str, form_type: str = "10-K", limit: int = 10):
     ticker = ticker.upper().strip()
 
     company = get_company_by_ticker(db, ticker)
