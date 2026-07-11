@@ -1,9 +1,11 @@
+import os
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api.v1.router import api_router
 from app.core.database import Base, engine
-from sqlalchemy import text
-from fastapi.middleware.cors import CORSMiddleware
 
 with engine.connect() as connection:
     connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
@@ -16,12 +18,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
+frontend_url = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:5173",
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        frontend_url,
     ],
     allow_credentials=True,
     allow_methods=["*"],
