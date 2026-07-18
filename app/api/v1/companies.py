@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
-from app.models import MarketPrice
+from app.models import MarketPrice, Company
 from app.models.filing import Filing
 from app.models.financial_statement import FinancialStatement
 from app.services.chunking_service import refresh_filing_chunks, refresh_chunk_embeddings
@@ -21,6 +21,33 @@ class CompanyIngestRequest(BaseModel):
     ticker: str
     force_refresh: bool = False
 
+
+@router.get("/latest-ingests")
+async def get_latest_ingests(
+    limit: int = 10,
+    db: Session = Depends(get_db),
+):
+    companies = (
+        db.query(Company)
+        .order_by(Company.updated_at.desc())
+        .limit(min(limit, 50))
+        .all()
+    )
+
+    return {
+        "companies": [
+            {
+                "id": company.id,
+                "ticker": company.ticker,
+                "name": company.name,
+                "sector": company.sector,
+                "industry": company.industry,
+                "created_at": company.created_at,
+                "updated_at": company.updated_at,
+            }
+            for company in companies
+        ]
+    }
 
 
 @router.get("/search")
@@ -359,4 +386,6 @@ async def full_ingest_company(
         },
         "dashboard": dashboard,
     }
+
+
 

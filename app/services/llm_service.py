@@ -1,8 +1,15 @@
+import os
 import requests
 
+OLLAMA_URL = os.getenv(
+    "OLLAMA_URL",
+    "http://ollama:11434/api/generate",
+)
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "qwen2.5:7b"
+MODEL_NAME = os.getenv(
+    "OLLAMA_MODEL",
+    "qwen2.5:7b",
+)
 
 
 def generate_answer(prompt: str) -> str:
@@ -17,7 +24,4 @@ def generate_answer(prompt: str) -> str:
     )
 
     response.raise_for_status()
-
-    data = response.json()
-
-    return data["response"]
+    return response.json()["response"]

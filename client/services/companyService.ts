@@ -82,3 +82,23 @@ export async function askRagQuestion(
 
     return response.json();
 }
+type LatestIngestsResponse = {
+    companies: Company[];
+};
+
+export async function getLatestIngests(
+    limit = 10,
+): Promise<Company[]> {
+    const response = await fetch(
+        `${API_BASE_URL}/companies/latest-ingests?limit=${limit}`,
+    );
+
+    if (!response.ok) {
+        return [];
+    }
+
+    const data: LatestIngestsResponse =
+        await response.json();
+
+    return data.companies;
+}
