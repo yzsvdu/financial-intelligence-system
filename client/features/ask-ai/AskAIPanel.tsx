@@ -10,7 +10,7 @@ import {
 
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import { useState } from "react";
-import { askRagQuestion } from "../services/companyService";
+import { askRagQuestion } from "../../services/companyService";
 
 type AskAIPanelProps = {
     ticker: string | null;

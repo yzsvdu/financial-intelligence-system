@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
 import { Box, Divider, Paper } from "@mui/material";
 
-import { getCompanyDashboard } from "../services/companyService";
+import { getCompanyDashboard } from "../../services/companyService";
 
-import DashboardState from "./company-dashboard/components/DashboardState";
-import DashboardHeader from "./company-dashboard/components/DashboardHeader";
-import CompanyDashboardContent from "./company-dashboard/CompanyDashboardContent";
+import DashboardState from "./components/DashboardState";
+import DashboardHeader from "./components/DashboardHeader";
+import CompanyDashboardContent from "./CompanyDashboardContent";
+
+import {
+    buildDashboardAnalytics,
+} from "./dashboard.utils";
 
 import type {
     CompanyDashboardPanelProps,
     DashboardData,
-} from "./company-dashboard/dashboard.types";
+} from "./dashboard.types";
 
 type DashboardRequestState = {
     data: DashboardData | null;
@@ -100,6 +104,9 @@ export default function CompanyDashboardPanel({
         );
     }
 
+    const data = requestState.data;
+    const analytics = buildDashboardAnalytics(data);
+
     return (
         <Paper
             sx={{
@@ -110,9 +117,14 @@ export default function CompanyDashboardPanel({
                 overflow: "hidden",
             }}
         >
-            <DashboardHeader company={requestState.data.company} filings={requestState.data.filings} />
+            <DashboardHeader
+                company={data.company}
+                filings={data.filings}
+                data={data}
+                latestFinancial={analytics.latestFinancial}
+            />
 
-            <Divider sx={{ my: 2 }} />
+            <Divider sx={{ my: 1.5 }} />
 
             <Box
                 sx={{
@@ -122,9 +134,7 @@ export default function CompanyDashboardPanel({
                     pr: 1,
                 }}
             >
-                <CompanyDashboardContent
-                    data={requestState.data}
-                />
+                <CompanyDashboardContent data={data} />
             </Box>
         </Paper>
     );

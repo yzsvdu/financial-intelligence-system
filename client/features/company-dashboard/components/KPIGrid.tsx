@@ -9,7 +9,7 @@ import {
     formatCurrency,
     formatPercent,
 } from "../dashboard.utils";
-import KPICard from "./KPICard.tsx";
+import KPICard from "./KPICard";
 
 type KpiGridProps = {
     data: DashboardData;
@@ -58,12 +58,20 @@ export default function KPIGrid({
     ];
 
     return (
-        <>
+        <Grid container spacing={1}>
             {cards.map((card) => (
-                <Grid key={card.label} size={{ xs: 12, sm: 6, lg: 2 }}>
+                <Grid
+                    key={card.label}
+                    size={{
+                        xs: 12,
+                        sm: 6,
+                        md: 4,
+                        xl: 2,
+                    }}
+                >
                     <KPICard {...card} />
                 </Grid>
             ))}
-        </>
+        </Grid>
     );
 }
