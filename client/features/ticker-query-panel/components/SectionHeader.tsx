@@ -1,7 +1,7 @@
 import {Box, IconButton, Typography} from "@mui/material";
 import KeyboardArrowDownRounded from "@mui/icons-material/KeyboardArrowDownRounded";
 import KeyboardArrowRightRounded from "@mui/icons-material/KeyboardArrowRightRounded";
-import {SectionHeaderProps} from "../ticker-query.types";
+import type {SectionHeaderProps} from "../ticker-query.types.ts";
 
 
 

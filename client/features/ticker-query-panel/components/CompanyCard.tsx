@@ -1,6 +1,6 @@
 import {Box, Checkbox, Typography} from "@mui/material";
 import CompanyStatus from "./CompanyStatus";
-import {CompanyCardProps} from "../ticker-query.types";
+import type {CompanyCardProps} from "../ticker-query.types.ts";
 
 export default function CompanyCard({
     company,
